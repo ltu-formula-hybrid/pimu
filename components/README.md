@@ -1,2 +1,0 @@
-# components
-Embedded systems components
