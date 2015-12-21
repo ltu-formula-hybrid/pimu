@@ -39,7 +39,7 @@ using namespace std;
     {
         //find APP by mean and convert to percent- store in APP_cent
         APP2_voltage=ain*3.3f;
-        APP1_voltage=APP1_voltage;
+        APP1_voltage=APP2_voltage;
         APP_cent=convert_volt_to_cent((APP1_voltage+APP2_voltage)/2,3.3f);
         return APP_cent;
     }
@@ -86,9 +86,9 @@ int main()
     //voidFunc();
    // p.write(1);
     device.baud(9600);
-    device.putc(131);
-    device.putc(0x85);
-    device.putc(0x00);
+    device.putc(131); // release motor 
+    device.putc(0x85); // set motor forward
+    device.putc(0x00); // set motor speed to 0 rpm
               
     while(1) 
     {
@@ -99,7 +99,7 @@ int main()
        // wait(0.2);
         myled = 0; 
         //wait(0.2);
-          getAPP();
+          getAPP(); // gets the current APP value 
           //getICE_rpm();
           //check if engine rpm <rev limit
           if(checkEngineRPM(RevLimit))
@@ -107,9 +107,9 @@ int main()
               //setMC1();
               //motor.period(0.10f);
               //motor.write(MC1);
-              device.putc(0x85);
-              device.putc(0x00);
-              device.putc(APP_cent/4);
+              device.putc(0x85); // sets motor forward
+              device.putc(0x00); // set speed to 0
+              device.putc(APP_cent/4); // set speed to APP pedal value
               led2 = 1;
               //wait(convert_cent_to_volt(APP_cent,1.0f));
               //for(int i=0;i<ain;i=i+0.1f)
