@@ -4,24 +4,26 @@
  *
  * Created on January 9, 2016, 1:10 PM
  */
-#include "../mbed/mbed.h"
 
 #ifndef THROTTLEBODYCTRL_H
 #define	THROTTLEBODYCTRL_H
+#include "../mbed/mbed.h"
 
 class ThrottleBodyCtrl {
 public:
     void increase(); // Increase the throttle position.
     void decrease(); // Decrease the throttle position.
     void hold(); // Hold at the current throttle position.
+    void idle(); // Bring throttle position into idle location.
     
-    ThrottleBodyCtrl(Serial*);
+    ThrottleBodyCtrl(Serial *, AnalogIn *);
     virtual ~ThrottleBodyCtrl();
 private:
-    Serial *controller;
-    const int increasePercentage = 0x30f;
-    const int decreasePercentage = 0x05f;
-    const int holdPercentage = 0x10f;
+    Serial * controller;
+    AnalogIn * feedback;
+    const int increasePercentage = 0x35;
+    const int decreasePercentage = 0x00;
+    const int holdPercentage = 0x10;
     
     void setup();
 };
