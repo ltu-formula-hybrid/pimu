@@ -2,11 +2,13 @@
 
 
 
-DigitalOut myled(LED1);
-DigitalOut led2(LED2);
-//PwmOut motor(p21);
-Serial device(p9, p10);
+DigitalOut pimuLED(LED1);
+DigitalOut appLED(LED2);
+DigitalOut tpsLED(LED3);
+DigitalOut loopLED(LED4);
+Serial pololu(p28, p27);
 AnalogIn   ain(p19);
+AnalogIn  tps(p20);
 AnalogOut  aout(p18);
 
 using namespace std;
@@ -85,19 +87,19 @@ int main()
    
     //voidFunc();
    // p.write(1);
-    device.baud(9600);
-    device.putc(131); // release motor 
-    device.putc(0x85); // set motor forward
-    device.putc(0x00); // set motor speed to 0 rpm
+    //pololu.baud(9600);
+    //pololu.putc(131); // release motor 
+    //pololu.putc(0x85); // set motor forward
+    //pololu.putc(0x00); // set motor speed to 0 rpm
               
     while(1) 
     {
         //cycle starts here
         
          //demo code
-        myled = 1;
-       // wait(0.2);
-        myled = 0; 
+        //pimuLED = 1;
+        //wait(0.2);
+        //pimuLED = 0; 
         //wait(0.2);
           getAPP(); // gets the current APP value 
           //getICE_rpm();
@@ -107,18 +109,69 @@ int main()
               //setMC1();
               //motor.period(0.10f);
               //motor.write(MC1);
-              device.putc(0x85); // sets motor forward
-              device.putc(0x00); // set speed to 0
-              device.putc(APP_cent/4); // set speed to APP pedal value
-              led2 = 1;
+              
+//              pololu.putc(0x85); // sets motor forward
+//              pololu.putc(0x00); // set speed to 0
+//              pololu.putc(APP_cent/2); // set speed to APP pedal value
+              
+              
+              // If app_percent / 50 > current_tps_percent && app_percent <= current_tps_percent
+              //if(APP_cent*.5f>convert_volt_to_cent(tps,3.9f)&&APP_cent<=convert_volt_to_cent(tps,3.9f))
+
+              pimuLED = 0;
+              appLED = 0;
+              tpsLED = 0;
+              loopLED = 0;
+              wait(.2f);
+              loopLED = 1;
+              if (convert_cent_to_volt(tps, 3.9f) > 20) {
+                  // This never happens! Wtf?
+                  pimuLED = 1;
+              }
+  
+              //aout = tps;
+              aout = float(convert_cent_to_volt(tps * 100, 3.9f)) / 100.0f;
+              /*if(APP_cent - 10 <= convert_cent_to_volt(tps,3.9f) <= APP_cent + 10)
+              {
+                  pololu.putc(0x85); // sets motor forward
+                  pololu.putc(0x00); // set speed to 0
+                  pololu.putc(0x10);
+                  pimuLED = 1;
+              }
+              // else if app_percent < current_tps_percent
+              else  */if(APP_cent < convert_cent_to_volt(tps,3.9f))
+              {
+                  pololu.putc(0x85); // sets motor forward
+                  pololu.putc(0x00); // set speed to 0
+                  pololu.putc(0x05);
+                  tpsLED = 1;
+              }
+              // else if app_percent > current_tps_percent
+              //else  if(APP_cent>convert_volt_to_cent(tps,3.9f))
+              else
+              {
+                  pololu.putc(0x85); // sets motor forward
+                  pololu.putc(0x00); // set speed to 0
+                  pololu.putc(0x30);
+                  appLED = 1;
+
+              }
+              wait(0.2f);
+        
+                  
+              //appLED = 1;
               //wait(convert_cent_to_volt(APP_cent,1.0f));
               //for(int i=0;i<ain;i=i+0.1f)
-              wait(ain);
-              led2 = 0; 
+              //wait(ain);
+              //appLED = 0; 
               //wait(convert_cent_to_volt(APP_cent,1.0f));
-              wait(ain);
+              //wait(ain);
               //aout=ain*2.0f;
-              aout=ain;
+              //aout=ain;
+              //tpsLED=1;
+              //wait(tps);
+              //tpsLED=0;
+              
           }
          
           
