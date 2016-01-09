@@ -15,15 +15,20 @@ public:
     void decrease(); // Decrease the throttle position.
     void hold(); // Hold at the current throttle position.
     void idle(); // Bring throttle position into idle location.
+    void become(float);
+    float percent(); // Retrieve the current position of the throttle.
     
     ThrottleBodyCtrl(Serial *, AnalogIn *);
     virtual ~ThrottleBodyCtrl();
 private:
     Serial * controller;
     AnalogIn * feedback;
-    const int increasePercentage = 0x35;
+    
+    const int increasePercentage = 0x45;
     const int decreasePercentage = 0x00;
     const int holdPercentage = 0x10;
+    
+    const float idlePosition = 0.00f;
     
     void setup();
 };

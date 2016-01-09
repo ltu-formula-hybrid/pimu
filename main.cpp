@@ -2,13 +2,9 @@
 #include "ThrottleBodyCtrl.h"
 #include "utils.h"
 
-
-//Serial controller(p28, p27);
-
 AnalogIn att(p19);
 AnalogIn tps(p20);
 AnalogOut pimu(p18);
-
 
 float APP1_voltage = 0.5;
 float APP2_voltage = 0.5;
@@ -86,22 +82,16 @@ int main() {
     utils::led_num(0);
 
     while (1) {
-        float skewed_tps = tps - 0.1030f;
-
         getAPP();
-
-        if (att < 0.50f) {
-            tbCtrl.idle();
-        } else {
-            if (checkEngineRPM(RevLimit)) {
-                if ((att - 0.05f) < skewed_tps && skewed_tps < (att + 0.05f)) {
-                    tbCtrl.hold();
-                } else if (att < skewed_tps && skewed_tps > 0.50f) {
-                    tbCtrl.decrease();
-                }
-                else if (att > skewed_tps) {
-                    tbCtrl.increase();
-                }
+        float tps = tbCtrl.percent();
+        if (checkEngineRPM(RevLimit)) {
+            if ((att - 0.07f) < tps && tps < (att + 0.07f)) {
+                tbCtrl.hold();
+            } else if (att < tps) {
+                tbCtrl.decrease();
+            }
+            else if (att > tps) {
+                tbCtrl.increase();
             }
         }
     }

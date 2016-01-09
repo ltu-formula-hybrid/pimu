@@ -29,16 +29,35 @@ void ThrottleBodyCtrl::hold() {
 }
 
 void ThrottleBodyCtrl::idle() {
-    float idle_percent = 0.30f;
-    float skewed_tps = *this->feedback - 0.1030f;
-    if (skewed_tps < idle_percent) {
+    float threshold = 0.10f;
+    float tps = this->percent();
+    
+    if (tps < this->idlePosition) {
         this->increase();
     } 
-    else if (idle_percent < skewed_tps && skewed_tps < idle_percent + 0.10f) {
+    else if (this->idlePosition < tps && tps < this->idlePosition + threshold) {
         this->hold();
     } else {
         this->decrease();
     }
+}
+
+float ThrottleBodyCtrl::percent() {
+    // The TPS will not go to 0 volts.
+    // We will do the following to adjust. This is NOT the best solution,
+    // but will work for now...
+    float skewed = *this->feedback - 0.1030f;
+    
+    if (skewed < 0.0f)
+    {
+        skewed = 0.0f;
+    }
+    else if (skewed > 1.0f)
+    {
+        skewed = 1.0f;
+    }
+    
+    return skewed;
 }
 
 ThrottleBodyCtrl::ThrottleBodyCtrl(Serial * ctrl, AnalogIn * feedback) {
