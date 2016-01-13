@@ -28,6 +28,8 @@ private:
     const int decreasePercentage = 0x00;
     const int holdPercentage = 0x10;
     
+    int increaseAmt = 0x10;
+    
     const float idlePosition = 0.00f;
     
     void setup();

@@ -64,12 +64,12 @@ void idle(ThrottleBodyCtrl ctrl) {
     float skewed_tps = tps - 0.1030f;
     if (skewed_tps < 0.50f) {
         mc.putc(0x85);
-        mc.putc(0x85);
+        mc.putc(0x00);
         mc.putc(0x30);
         //ctrl.increase();
     } else {
         mc.putc(0x85);
-        mc.putc(0x85);
+        mc.putc(0x00);
         mc.putc(0x10);
     }
     return;
@@ -79,19 +79,75 @@ int main() {
     ThrottleBodyCtrl tbCtrl(&mc, &tps);
     int RevLimit = 13000;
 
+    int led_number = 0;
     utils::led_num(0);
-
+    mc.putc(0x85); // Set motor to forward diretion
+    mc.putc(0x00);
+    mc.putc(0x00);
+    wait(1);
+    
+    int amt = 0x10;
+    int decAmt = 0x20;
+//    while (1) {
+//        mc.putc(0x85); // Set motor to forward diretion
+//        mc.putc(0x00);
+//        mc.putc(amt);
+//        amt += 0x01;
+//        wait(0.5);
+//        if (tps > 0.90f) {
+//            break;
+//        }
+//    }
+//    return 0;
     while (1) {
+        //utils::led_num(led_number);
+        led_number += 1;
+        if (led_number > 15) {
+            led_number = 0;
+        }
         getAPP();
+        float waits = 0.00001;
         float tps = tbCtrl.percent();
         if (checkEngineRPM(RevLimit)) {
             if ((att - 0.07f) < tps && tps < (att + 0.07f)) {
-                tbCtrl.hold();
+                //tbCtrl.hold();
+                amt = 0x10;
+                decAmt = 0x20;
+                if (tps > 0.80f) {
+                    mc.putc(0x85); // Set motor to forward diretion
+                    mc.putc(0x00);
+                    mc.putc(0x25);
+                } else {
+                    mc.putc(0x85); // Set motor to forward diretion
+                    mc.putc(0x00);
+                    mc.putc(0x10); 
+                }
+                wait(waits); 
             } else if (att < tps) {
-                tbCtrl.decrease();
+                mc.putc(0x85); // Set motor to forward diretion
+                mc.putc(0x00);
+                mc.putc(decAmt);
+                decAmt -= 0x01;
+                if (decAmt < 0x00) {
+                    decAmt = 0x00;
+                }
+                wait(waits);                
+                //tbCtrl.decrease();
             }
             else if (att > tps) {
-                tbCtrl.increase();
+                mc.putc(0x85); // Set motor to forward diretion
+                mc.putc(0x00);
+                mc.putc(amt);
+                if (att - tps > 0.50f) {
+                    amt += 0x03;
+                } else {
+                    amt += 0x01;
+                }
+                if (amt > 0x30) {
+                    amt = 0x25;
+                }
+                wait(waits);
+                //tbCtrl.increase();
             }
         }
     }
