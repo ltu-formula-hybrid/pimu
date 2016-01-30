@@ -13,33 +13,24 @@ void ThrottleBodyCtrl::setup() {
     
 }
 
+void ThrottleBodyCtrl::idle() {
+    this->setup();
+    (*this->controller).putc(this->idlePercentage); 
+}
+
 void ThrottleBodyCtrl::increase() {
     this->setup();
-    (*this->controller).putc(this->increasePercentage); 
+    (*this->controller).putc(this->increaseAmt); 
 }
 
 void ThrottleBodyCtrl::decrease() {
     this->setup();
-    (*this->controller).putc(this->decreasePercentage); 
+    (*this->controller).putc(this->decreaseAmt); 
 }
 
 void ThrottleBodyCtrl::hold() {
     this->setup();
     (*this->controller).putc(this->holdPercentage); 
-}
-
-void ThrottleBodyCtrl::idle() {
-    float threshold = 0.10f;
-    float tps = this->percent();
-    
-    if (tps < this->idlePosition) {
-        this->increase();
-    } 
-    else if (this->idlePosition < tps && tps < this->idlePosition + threshold) {
-        this->hold();
-    } else {
-        this->decrease();
-    }
 }
 
 float ThrottleBodyCtrl::percent() {
