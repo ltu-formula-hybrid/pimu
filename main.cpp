@@ -2,34 +2,62 @@
 #include "ThrottleBodyCtrl.h"
 #include "utils.h"
 
+
+#define TEST_BUILD false
+#define TEST_TX false
+
 const int ICE_REV_LIMIT = 13000;
 
 AnalogIn att(p19);  // (Input) Attenuator signal
 AnalogOut yasa(p18); // (Output) YASA MC voltage
 Serial mc(p28, p27); // (Input/Output) Motor Controller serial line
 PwmOut mc2(p21);    // (Output) PWM line to new Motor Controller
+#if (TEST_BUILD == true && TEST_TX == true)
+AnalogIn test_engine_rpm(p16);  // (Input) Fake Engine RPM signal
+#endif
 
-CAN vnet(p9, p10); // (Input/Output) Vehicle CAN network lines
+CAN vnet(p30, p29); // (Input/Output) Vehicle CAN network lines
 CANMessage cmsg; // Stores most recent, highest priority CAN message.
 
 
 int main() {
-    char counter = 42;
-    int ice_rev = 0;
+    bool SEND = true;
+    unsigned long long ice_rpm = 0;
     float waitDelay = 0.01;
     
     mc2.period_ms(20);
     
     while (1) {
+#if (TEST_BUILD == true && TEST_TX == true)
+        const char engine_rpm = int(test_engine_rpm * 15000);
+        vnet.write(CANMessage(0x610, &engine_rpm, 1));
+
+        wait(0.5);
+        utils::set_leds(false, false, false, false);
+        wait(0.5);
+        utils::set_leds(true, true, true, true);
+        continue;
+#endif
+        
         if (vnet.read(cmsg)) {
-            if (cmsg.id == 1337) {
-                if (cmsg.data[0] == 42) {
-                    utils::set_leds(true, true, true, true);
-                }
+            if (cmsg.id == 0x610) {
+#if (TEST_BUILD == true && TEST_TX == false)
+                utils::set_leds(false, false, false, false);
+                wait(0.5);
+                utils::set_leds(true, true, true, true);
+                wait(0.5);
+#endif
+                char first_byte = cmsg.data[0];
+                char second_byte = cmsg.data[1];
+                
+                // Rotate the bytes for Big Endianness
+                first_byte = (first_byte >> 1) | (first_byte << 7);
+                second_byte = (second_byte >> 1) | (second_byte << 7);
+                ice_rpm = second_byte + first_byte;
             }
         }
         
-        if (ice_rev >= ICE_REV_LIMIT) {
+        if (ice_rpm >= ICE_REV_LIMIT) {
             yasa = 0;
             continue;
         }
