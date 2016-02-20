@@ -3,15 +3,19 @@
 #include "utils.h"
 
 
-#define TEST_BUILD false
+#define TEST_BUILD true
 #define TEST_TX false
 
 const int ICE_REV_LIMIT = 13000;
 
-AnalogIn att(p19);  // (Input) Attenuator signal
+AnalogIn att_ch1(p20);  // (Input) Attenuator signal Channel 1
+AnalogIn att_ch2(p19);  // (Input) Attenuator signal Channel 2
 AnalogOut yasa(p18); // (Output) YASA MC voltage
 Serial mc(p28, p27); // (Input/Output) Motor Controller serial line
 PwmOut mc2(p21);    // (Output) PWM line to new Motor Controller
+
+LocalFileSystem local("local");
+
 #if (TEST_BUILD == true && TEST_TX == true)
 AnalogIn test_engine_rpm(p16);  // (Input) Fake Engine RPM signal
 #endif
@@ -24,47 +28,49 @@ int main() {
     bool SEND = true;
     unsigned long long ice_rpm = 0;
     float waitDelay = 0.01;
+    float avg_att = 0.00;
     
     mc2.period_ms(20);
     
     while (1) {
 #if (TEST_BUILD == true && TEST_TX == true)
-        const char engine_rpm = int(test_engine_rpm * 15000);
-        vnet.write(CANMessage(0x610, &engine_rpm, 1));
+        unsigned long long n = int(test_engine_rpm * 15000);
+        char * adr = new char [2];
+        char first = (n >> 8) & 0xFF;
+        char second = n & 0xFF; 
+        adr[0] = second;
+        adr[1] = first;
 
-        wait(0.5);
-        utils::set_leds(false, false, false, false);
-        wait(0.5);
-        utils::set_leds(true, true, true, true);
+        vnet.write(CANMessage(0x610, adr));
+        wait(0.05);
         continue;
 #endif
         
         if (vnet.read(cmsg)) {
             if (cmsg.id == 0x610) {
-#if (TEST_BUILD == true && TEST_TX == false)
-                utils::set_leds(false, false, false, false);
-                wait(0.5);
-                utils::set_leds(true, true, true, true);
-                wait(0.5);
-#endif
-                char first_byte = cmsg.data[0];
-                char second_byte = cmsg.data[1];
-                
-                // Rotate the bytes for Big Endianness
-                first_byte = (first_byte >> 1) | (first_byte << 7);
-                second_byte = (second_byte >> 1) | (second_byte << 7);
-                ice_rpm = second_byte + first_byte;
+                char first_byte = cmsg.data[1];
+                char second_byte = cmsg.data[0];
+
+                ice_rpm = first_byte;
+                ice_rpm = (ice_rpm << 8);
+                ice_rpm = ice_rpm | second_byte;
             }
         }
-        
+                
         if (ice_rpm >= ICE_REV_LIMIT) {
+            utils::set_leds(true, true, true, true);
             yasa = 0;
             continue;
+        } else {
+            utils::set_leds(false, false, false, false);
         }
         
         // Set the Yasa MC to match the attenuator
-        yasa = att;
-        int target = int(att * 2000.00 + 300);
+        // TODO: check for huge difference
+        avg_att = (att_ch1 + att_ch2) / 2.00;
+
+        yasa = avg_att;
+        int target = int(avg_att * 2000.00 + 300);
         if (target > 2500) {
             target = 2500;
         } else if (target < 0) {

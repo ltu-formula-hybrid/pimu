@@ -115,7 +115,7 @@ Wire Wire Line
 Wire Wire Line
 	1650 2650 1500 2650
 Wire Wire Line
-	1300 2750 1650 2750
+	1200 2750 1650 2750
 Wire Wire Line
 	2650 950  2900 950 
 Wire Wire Line
@@ -124,8 +124,6 @@ Wire Wire Line
 	1700 3350 1500 3350
 Wire Wire Line
 	1700 3450 1300 3450
-Wire Wire Line
-	1300 3450 1300 2750
 Wire Wire Line
 	2650 1950 2750 1950
 Wire Wire Line
@@ -207,10 +205,10 @@ Wire Wire Line
 	3700 1200 3700 1300
 Wire Wire Line
 	2750 3050 2850 3050
-Text GLabel 4350 2550 2    39   Output ~ 0
-MC_VSS
-Text GLabel 4350 2650 2    39   Output ~ 0
-MC_GND
+Text GLabel 4350 2550 2    39   Input ~ 0
+12V
+Text GLabel 4350 2650 2    39   Input ~ 0
+GND
 Text GLabel 4350 2750 2    39   Output ~ 0
 MC_A
 Text GLabel 4350 2850 2    39   Output ~ 0
@@ -224,9 +222,17 @@ Wire Wire Line
 Wire Wire Line
 	4350 2550 4200 2550
 Text GLabel 3550 3650 3    39   Input ~ 0
-MC_FB
+TPS_FB
 Wire Wire Line
 	3550 3500 3550 3650
 Wire Wire Line
 	2750 2850 2750 3050
+Wire Wire Line
+	1300 3450 1300 2850
+Wire Wire Line
+	1300 2850 1650 2850
+Wire Wire Line
+	1200 2750 1200 3550
+Wire Wire Line
+	1200 3550 1700 3550
 $EndSCHEMATC
