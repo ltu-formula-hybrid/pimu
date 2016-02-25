@@ -29,6 +29,7 @@ int main() {
     unsigned long long ice_rpm = 0;
     float waitDelay = 0.01;
     float avg_att = 0.00;
+    bool cutYasa=false;
     
     mc2.period_ms(20);
     
@@ -46,8 +47,10 @@ int main() {
         continue;
 #endif
         
-        if (vnet.read(cmsg)) {
-            if (cmsg.id == 0x610) {
+        if (vnet.read(cmsg))
+         {
+            if (cmsg.id == 0x610) 
+            {
                 char first_byte = cmsg.data[1];
                 char second_byte = cmsg.data[0];
 
@@ -57,18 +60,25 @@ int main() {
             }
         }
                 
-        if (ice_rpm >= ICE_REV_LIMIT) {
+        if (ice_rpm >= ICE_REV_LIMIT) 
+        {
             utils::set_leds(true, true, true, true);
-            yasa = 0;
-            continue;
-        } else {
+            cutYasa=true;
+            //continue;
+            
+        }
+         else 
+        {
+            cutYasa=false;  
             utils::set_leds(false, false, false, false);
         }
         
         // Set the Yasa MC to match the attenuator
         // TODO: check for huge difference
-        avg_att = (att_ch1 + att_ch2) / 2.00;
-
+        avg_att = (att_ch1 + (2.9f-att_ch2)) / 2.00;
+        if(cutYasa)
+        yasa=0;
+        else
         yasa = avg_att;
         int target = int(avg_att * 2000.00 + 300);
         if (target > 2500) {
