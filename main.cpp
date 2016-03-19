@@ -62,8 +62,10 @@ int main() {
         continue;
 #endif
         
-        if (vnet.read(cmsg)) {
-            if (cmsg.id == 0x610) {
+        if (vnet.read(cmsg))
+         {
+            if (cmsg.id == 0x610) 
+            {
                 char first_byte = cmsg.data[1];
                 char second_byte = cmsg.data[0];
 
@@ -74,6 +76,7 @@ int main() {
             }
         }
                 
+
         if (ice_rpm >= ICE_REV_LIMIT) {
 #if (TEST_BUILD == true && TEST_TX == false)
             utils::set_leds(true, true, true, true);
@@ -91,6 +94,7 @@ int main() {
         avg_att = (att_ch1 + att_ch2) / 2.00;
         
         last_att = avg_att;
+
         yasa = avg_att;
         int target = int(avg_att * 2000.00 + 300);
         if (target > 2500) {
