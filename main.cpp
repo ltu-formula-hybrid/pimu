@@ -22,20 +22,23 @@ AnalogIn test_engine_rpm(p16);  // (Input) Fake Engine RPM signal
 
 CAN vnet(p30, p29); // (Input/Output) Vehicle CAN network lines
 CANMessage cmsg; // Stores most recent, highest priority CAN message.
-
+float yasa_rampup=0;
 
 int main() {
     unsigned long long ice_rpm = 0;
     float waitDelay = 0.01;
     float avg_att = 0.00;
     float last_att = -1.00;
-    time_t last = 0;
-    time_t now = time(NULL);
+    //time_t last = 0;
+    //time_t now = time(NULL);
     
     mc2.period_ms(20);
     int test_rpm = 0;
-    
+   
     while (1) {
+        
+        
+    
 #if (TEST_BUILD == true && TEST_TX == true)
         //
         utils::set_leds(false, true, false, true);
@@ -75,27 +78,13 @@ int main() {
                 utils::set_leds(true, false, false, true);
             }
         }
-                
-
-        if (ice_rpm >= ICE_REV_LIMIT) {
-#if (TEST_BUILD == true && TEST_TX == false)
-            utils::set_leds(true, true, true, true);
-#endif
-            yasa = 0;
-            continue;
-        } else {
-#if (TEST_BUILD == true && TEST_TX == false)
-            utils::set_leds(false, false, false, false);
-#endif
-        }
-        
+         
         // Set the Yasa MC to match the attenuator
         // TODO: check for huge difference
         avg_att = (att_ch1 + att_ch2) / 2.00;
         
         last_att = avg_att;
-
-        yasa = avg_att;
+        
         int target = int(avg_att * 2000.00 + 300);
         if (target > 2500) {
             target = 2500;
@@ -104,6 +93,35 @@ int main() {
         }
             
         mc2.pulsewidth_us(target);
+        
+       if (ice_rpm >= ICE_REV_LIMIT) 
+       {
+#if (TEST_BUILD == true && TEST_TX == false)
+            utils::set_leds(true, true, true, true);
+#endif
+            yasa = 0;
+       } else 
+            {
+#if (TEST_BUILD == true && TEST_TX == false)
+            utils::set_leds(false, false, false, false);
+#endif            
+            //ramp_up
+                if(avg_att>yasa_rampup)
+                {
+                    yasa_rampup=yasa_rampup+.01f;
+                    yasa=yasa_rampup;
+                }
+                else
+                {   
+                yasa = avg_att;
+                yasa_rampup=avg_att;
+                }
+            
+             }
+        
+        
+        
         wait(waitDelay);
     }
 }
+
