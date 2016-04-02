@@ -6,7 +6,11 @@
 #define TEST_BUILD true
 #define TEST_TX false
 
+
 const int ICE_REV_LIMIT = 5000;
+
+
+Serial pc(USBTX, USBRX); // (Talk to PC)
 
 AnalogIn att_ch1(p20);  // (Input) Attenuator signal Channel 1
 AnalogIn att_ch2(p19);  // (Input) Attenuator signal Channel 2
@@ -23,6 +27,25 @@ AnalogIn test_engine_rpm(p16);  // (Input) Fake Engine RPM signal
 CAN vnet(p30, p29); // (Input/Output) Vehicle CAN network lines
 CANMessage cmsg; // Stores most recent, highest priority CAN message.
 float yasa_rampup=0;
+
+DigitalIn toggle_fwd(p18);
+DigitalIn toggle_bwd(p20);
+DigitalOut fwd_enable(p7);
+DigitalOut bwd_enable(p8);
+DigitalOut l1(LED1);
+DigitalOut l2(LED2);
+
+int FWD_ON=0;
+int BWD_ON=0;
+bool fwd=false;
+bool bwd=false;
+bool waitforLOW_fwd=true;
+bool reseted_fwd=false;
+bool waitforLOW_bwd=true;
+bool reseted_bwd=false;
+int cycle=0;
+int toggle_noise_count_fwd=0;
+int toggle_noise_count_bwd=0;
 
 int main() {
     unsigned long long ice_rpm = 0;
@@ -79,6 +102,118 @@ int main() {
             }
         }
          
+                cycle++;
+        //wait(1.0);
+       
+        pc.printf("\n Cycle=%d ",cycle);
+//        pc.printf("\t Status_fwd=");fwd?pc.printf("true"):pc.printf("false");
+//        pc.printf("\t Status_bwd=");bwd?pc.printf("true"):pc.printf("false");
+//        pc.printf("\t Status_waitforLOW_FWD=");waitforLOW_fwd?pc.printf("true"):pc.printf("false");
+//        pc.printf("\t Status_waitforLOW_BWD=");waitforLOW_bwd?pc.printf("true"):pc.printf("false");
+//        pc.printf("\t Status_reseted_FWD=");reseted_fwd?pc.printf("true"):pc.printf("false");
+//        pc.printf("\t Status_reseted_BWD=");reseted_bwd?pc.printf("true"):pc.printf("false");
+          toggle_fwd==1?pc.printf("\t toggle_fwd=3.3"):pc.printf("toggle_fwd=0");
+          toggle_bwd==1?pc.printf("\t toggle_bwd=3.3"):pc.printf("toggle_fwd=0");
+        
+        if(waitforLOW_fwd)
+        {
+            if(!toggle_fwd)
+            {
+                reseted_fwd=true;
+                waitforLOW_fwd=false;
+            }
+        }
+        else if(waitforLOW_bwd)
+        {
+            if(!toggle_bwd)
+            {
+                reseted_bwd=true;
+                waitforLOW_bwd=false;
+            }
+        }
+        
+        
+        if(fwd&&!bwd)
+        {
+            fwd_enable=1;
+            bwd_enable=0;
+            l1=1;
+            l2=0;
+        }
+        else if(bwd&&!fwd)
+        {
+            fwd_enable=0;
+            bwd_enable=1;
+            l1=0;
+            l2=1;
+        }else if(!bwd&&!fwd) {
+            fwd_enable=0;
+            bwd_enable=0;
+            l1=0;
+            l2=0;
+        }
+        
+        if(toggle_fwd)
+        {
+            toggle_noise_count_bwd=0;
+            toggle_noise_count_fwd++;
+            waitforLOW_fwd=true;
+            if(reseted_fwd&&toggle_noise_count_fwd>3)
+            {
+            if(!fwd&&!bwd&&reseted_fwd)
+            {
+                fwd=true;
+                bwd=false;
+                reseted_fwd=false;
+            }
+            else if(fwd&&!bwd&&reseted_fwd)
+            {
+                fwd=false;
+                bwd=false;
+                reseted_fwd=false;
+            }
+            else if (!fwd&&bwd&&reseted_fwd)
+            {
+                fwd=false;
+                bwd=false;
+                reseted_fwd=false;
+            }
+            }
+        }
+        else if(toggle_bwd)
+        {
+            toggle_noise_count_fwd=0;
+            toggle_noise_count_bwd++;
+            waitforLOW_bwd=true;
+            if(reseted_bwd&&toggle_noise_count_bwd>3)
+            {
+            if(!fwd&&!bwd&&reseted_bwd)
+            {
+                fwd=false;
+                bwd=true;
+                reseted_bwd=false;
+            }
+            else if(!fwd&&bwd&&reseted_bwd)
+            {
+                fwd=false;
+                bwd=false;
+                reseted_bwd=false;
+            }
+            else if (fwd&&!bwd&&reseted_bwd)
+            {
+                fwd=false;
+                bwd=false;
+                reseted_bwd=false;
+            }
+            
+            }
+        }else
+        {
+            toggle_noise_count_fwd=0;
+            toggle_noise_count_bwd=0;
+        }
+
+        
         // Set the Yasa MC to match the attenuator
         // TODO: check for huge difference
         avg_att = (att_ch1 + att_ch2) / 2.00;
@@ -124,4 +259,3 @@ int main() {
         wait(waitDelay);
     }
 }
-
