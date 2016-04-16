@@ -1,7 +1,7 @@
 #include "../mbed/mbed.h"
 #include "ThrottleBodyCtrl.h"
 #include "utils.h"
-
+#include "PwmIn.h"
 
 #define TEST_BUILD true
 #define TEST_TX false
@@ -20,7 +20,7 @@ PwmOut mc2(p21);    // (Output) PWM line to new Motor Controller
 
 LocalFileSystem local("local");
 
-#if (TEST_BUILD == true && TEST_TX == true)
+#if (TEST_BUILD == true && TEST_TX == false)
 AnalogIn test_engine_rpm(p16);  // (Input) Fake Engine RPM signal
 #endif
 
@@ -28,12 +28,13 @@ CAN vnet(p30, p29); // (Input/Output) Vehicle CAN network lines
 CANMessage cmsg; // Stores most recent, highest priority CAN message.
 float yasa_rampup=0;
 
-DigitalIn toggle_fwd(p18);
-DigitalIn toggle_bwd(p20);
+DigitalIn toggle_fwd(p5);
+DigitalIn toggle_bwd(p6);
 DigitalOut fwd_enable(p7);
 DigitalOut bwd_enable(p8);
 DigitalOut l1(LED1);
 DigitalOut l2(LED2);
+PwmIn xout(p15);
 
 int FWD_ON=0;
 int BWD_ON=0;
@@ -48,21 +49,23 @@ int toggle_noise_count_fwd=0;
 int toggle_noise_count_bwd=0;
 
 int main() {
-    unsigned long long ice_rpm = 0;
-    float waitDelay = 0.01;
-    float avg_att = 0.00;
-    float last_att = -1.00;
+  
+    int test_rpm = 1;
+   
+    while (1) 
+    {
+     
+           unsigned long long ice_rpm = 0;
+           float waitDelay = 0.01;
+           float avg_att = 0.00;
+           float last_att = -1.00;
     //time_t last = 0;
     //time_t now = time(NULL);
     
-    mc2.period_ms(20);
-    int test_rpm = 0;
-   
-    while (1) {
-        
-        
-    
-#if (TEST_BUILD == true && TEST_TX == true)
+            mc2.period_ms(20);
+            int test_rpm = 0;  
+            
+            #if (TEST_BUILD == true && TEST_TX == true)
         //
         utils::set_leds(false, true, false, true);
         wait(1.0);
@@ -101,21 +104,19 @@ int main() {
                 utils::set_leds(true, false, false, true);
             }
         }
-         
-                cycle++;
-        //wait(1.0);
-       
-        pc.printf("\n Cycle=%d ",cycle);
+        
+        
+          cycle++;
+          pc.printf("\n Cycle=%d ",cycle);
 //        pc.printf("\t Status_fwd=");fwd?pc.printf("true"):pc.printf("false");
 //        pc.printf("\t Status_bwd=");bwd?pc.printf("true"):pc.printf("false");
 //        pc.printf("\t Status_waitforLOW_FWD=");waitforLOW_fwd?pc.printf("true"):pc.printf("false");
 //        pc.printf("\t Status_waitforLOW_BWD=");waitforLOW_bwd?pc.printf("true"):pc.printf("false");
 //        pc.printf("\t Status_reseted_FWD=");reseted_fwd?pc.printf("true"):pc.printf("false");
 //        pc.printf("\t Status_reseted_BWD=");reseted_bwd?pc.printf("true"):pc.printf("false");
-          toggle_fwd==1?pc.printf("\t toggle_fwd=3.3"):pc.printf("toggle_fwd=0");
-          toggle_bwd==1?pc.printf("\t toggle_bwd=3.3"):pc.printf("toggle_fwd=0");
-        
-        if(waitforLOW_fwd)
+          //toggle_fwd==1?pc.printf("\t toggle_fwd=3.3"):pc.printf("toggle_bwd=0");
+          //toggle_bwd==1?pc.printf("\t toggle_bwd=3.3"):pc.printf("toggle_fwd=0");
+          if(waitforLOW_fwd)
         {
             if(!toggle_fwd)
             {
@@ -140,13 +141,15 @@ int main() {
             l1=1;
             l2=0;
         }
-        else if(bwd&&!fwd)
+        else if(bwd&&!fwd&&test_rpm==0)
         {
             fwd_enable=0;
             bwd_enable=1;
             l1=0;
             l2=1;
-        }else if(!bwd&&!fwd) {
+        }
+        else if(!bwd&&!fwd)
+        {
             fwd_enable=0;
             bwd_enable=0;
             l1=0;
@@ -212,8 +215,8 @@ int main() {
             toggle_noise_count_fwd=0;
             toggle_noise_count_bwd=0;
         }
-
         
+          
         // Set the Yasa MC to match the attenuator
         // TODO: check for huge difference
         avg_att = (att_ch1 + att_ch2) / 2.00;
@@ -257,5 +260,10 @@ int main() {
         
         
         wait(waitDelay);
+
+        
     }
+
+        
+    
 }
